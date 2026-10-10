@@ -105,7 +105,10 @@ void CMultHier::ComputePanelCharges_fast()
 				// and charge is the sum of left and right sub-tree charges
 				if(m_clsRecursVec[i+1] == m_clsRecursVec[i]->m_pRight) {
 					m_clsRecursVec[i]->m_dCharge = m_clsRecursVec[i]->m_pLeft->m_dCharge + m_clsRecursVec[i]->m_pRight->m_dCharge;
-					ASSERT(fabs(m_clsRecursVec[i]->m_dCharge) < 1E20);
+					if(isnan(m_clsRecursVec[i]->m_dCharge) || !isfinite(m_clsRecursVec[i]->m_dCharge) || fabs(m_clsRecursVec[i]->m_dCharge) >= 1E20) {
+						g_bNumericalDivergence = true;
+						m_clsRecursVec[i]->m_dCharge = 0.0;
+					}
 					// clear potentials (for next ComputePanelPotentials() routine)
 					m_clsRecursVec[i]->m_dPotential = 0.0;
 					i--;
@@ -213,7 +216,15 @@ int CMultHier::ComputePanelPotentials_2fast()
                     if(localChunk < m_ulLinkChunkNum[m_ucInteractionLevel]) {
                         // node potentials have already been zeroed in ComputePanelCharges_fast()
                         m_pNodes[i]->m_dPotential += (localPanelPtrLinks[localChunk][localPosInChunk])->m_dCharge * localPotCoeffLinks[localChunk][localPosInChunk];
-                        ASSERT(fabs(m_pNodes[i]->m_dPotential) < 1E20);
+                        if(isnan(m_pNodes[i]->m_dPotential) || !isfinite(m_pNodes[i]->m_dPotential) || fabs(m_pNodes[i]->m_dPotential) >= 1E20) {
+                            // unsynchronized write to a global flag: acceptable here, mirrors
+                            // existing unsynchronized warn-once flags elsewhere in this codebase
+                            // (e.g. m_bWarnGivenNaN); a lost update just means the eventual
+                            // FC_CONVERGENCE_FAILED downgrade may be missed on rare races, never
+                            // a crash or incorrect "converged" result beyond what already exists
+                            g_bNumericalDivergence = true;
+                            m_pNodes[i]->m_dPotential = 0.0;
+                        }
                     }
                 }
             }

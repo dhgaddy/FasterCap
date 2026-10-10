@@ -138,6 +138,15 @@ class CMemoryUsage;
 
 // global, type of solver invoked
 extern unsigned char g_ucSolverType;
+// global, set when a NaN/Inf/out-of-range value is detected and suppressed
+// anywhere in the hierarchical potential/charge solve (CAutoRefine::
+// PotEstimateOpt, CMultHier::ComputePanelCharges_fast/
+// ComputePanelPotentials_2fast) -- reset at the start of each
+// CSolveCap::SolveMain() call, checked at its end to downgrade an
+// otherwise-FC_NORMAL_END result to FC_CONVERGENCE_FAILED, since a
+// suppressed divergence makes the computed result unreliable even
+// though the solve itself didn't crash or time out.
+extern bool g_bNumericalDivergence;
 typedef std::list<std::string> StlStringList;
 extern StlStringList g_stlCondNames;
 extern CLin_Matrix g_clsCapMatrixRe, g_clsCapMatrixIm;

@@ -267,7 +267,12 @@ int CSolveCap::SolveMain(CAutoRefGlobalVars globalVars, CLin_Matrix &capRe, CLin
 	float solveTime;
 	bool not_refined_enough;
 	StlAutoCondDeque::iterator itc1;
-    
+
+	// reset before this invocation's solve; checked at the end of this
+	// function to downgrade an otherwise-FC_NORMAL_END result if a
+	// suppressed NaN/Inf/out-of-range value was detected along the way
+	g_bNumericalDivergence = false;
+
     // if just dumping the input file
     if(globalVars.m_bDumpInputGeo == true) {
         
@@ -582,6 +587,17 @@ int CSolveCap::SolveMain(CAutoRefGlobalVars globalVars, CLin_Matrix &capRe, CLin
 	g_clsMemUsageCopy = g_clsMemUsage;
 	DeallocateMemory(AUTOREFINE_DEALLMEM_AT_END, globalVars);
 	m_clsMulthier.DeallocateMemory();
+
+	// a suppressed NaN/Inf/out-of-range value was detected and clamped
+	// somewhere in the hierarchical potential/charge solve: the solve
+	// didn't crash, but the result isn't trustworthy, so downgrade an
+	// otherwise-successful return the same way auto-refine non-convergence
+	// already does (see FC_CONVERGENCE_FAILED above)
+	if(ret == FC_NORMAL_END && g_bNumericalDivergence == true) {
+		ErrMsg("\nWarning: numerical divergence detected during the hierarchical potential/charge solve (a NaN or out-of-range value was produced and suppressed).\n");
+		ErrMsg("         Remark: returning best-effort result, not a converged one.\n");
+		ret = FC_CONVERGENCE_FAILED;
+	}
 
 	return ret;
 }

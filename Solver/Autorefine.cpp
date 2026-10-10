@@ -3462,8 +3462,9 @@ int CAutoRefine::PotEstimateOpt(CAutoElement *element1, CAutoElement *element2, 
 		ret = FC_GENERIC_ERROR;
 	}
 
-	_ASSERT(!isnan(potestim1));
-	_ASSERT(isfinite(potestim1));
+	if(isnan(potestim1) || !isfinite(potestim1)) {
+		g_bNumericalDivergence = true;
+	}
 
 	return ret;
 }
@@ -3692,10 +3693,8 @@ int CAutoRefine::PotEstimateOpt(CAutoPanel *panel1, CAutoPanel *panel2, double &
 	// keep track of number of potential estimations
 	m_ulNumofpotest += 1;
 
-	_ASSERT(!isnan(potestim1));
-	_ASSERT(isfinite(potestim1));
-
 	if(isnan(potestim1) || !isfinite(potestim1) ) {
+		g_bNumericalDivergence = true;
 		if(m_clsGlobalVars.m_bWarnGivenNaN == false) {
 			// signal we already warned the user
 			m_clsGlobalVars.m_bWarnGivenNaN = true;

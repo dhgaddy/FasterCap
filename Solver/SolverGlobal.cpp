@@ -31,6 +31,9 @@
 // global, type of solver invoked
 unsigned char g_ucSolverType = SOLVERGLOBAL_3DSOLVER;
 
+// global, numerical-divergence-detected flag (see SolverGlobal.h)
+bool g_bNumericalDivergence = false;
+
 // result matrices and conductor names
 CLin_Matrix g_clsCapMatrixRe, g_clsCapMatrixIm;
 StlStringList g_stlCondNames;
